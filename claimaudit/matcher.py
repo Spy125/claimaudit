@@ -8,18 +8,24 @@ from dataclasses import dataclass
 from claimaudit.scholar import CitationContext
 
 
+# Each verb stem accepts its inflected forms; matching only the bare stem
+# would miss the way citations are actually written ("contradicts", "supported").
 _CONFIRM_PATTERNS = re.compile(
-    r'\b(confirm|support|consistent with|agree|validate|replicate|extend|'
-    r'in line with|corroborate|consistent|verify)\b',
+    r'\b(confirm(s|ed|ing)?|support(s|ed|ing)?|consistent with|agree(s|d|ing)?|'
+    r'validat(e|es|ed|ing)|replicat(e|es|ed|ing)|'
+    r'in line with|corroborat(e|es|ed|ing)|consistent|verif(y|ies|ied))\b',
     re.I
 )
 _CHALLENGE_PATTERNS = re.compile(
-    r'\b(contradict|challenge|dispute|refute|contrary|inconsistent|fail to replicate|'
-    r'not (support|consistent|replicate)|question|undermine|conflict)\b',
+    r'\b(contradict(s|ed|ing)?|challeng(e|es|ed|ing)|disput(e|es|ed|ing)|'
+    r'refut(e|es|ed|ing)|contrary|inconsistent|fails? to replicate|'
+    r'not (support(s|ed)?|consistent|replicat(e|ed))|question(s|ed|ing)?|'
+    r'undermin(e|es|ed|ing)|conflict(s|ed|ing)?)\b',
     re.I
 )
 _EXTEND_PATTERNS = re.compile(
-    r'\b(build on|extend|generalize|apply to|expand|further|beyond|improve upon)\b',
+    r'\b(build(s|ing)? on|extend(s|ed|ing)?|generaliz(e|es|ed|ing)|'
+    r'appl(y|ies|ied) to|expand(s|ed|ing)?|further|beyond|improv(e|es|ed|ing) upon)\b',
     re.I
 )
 

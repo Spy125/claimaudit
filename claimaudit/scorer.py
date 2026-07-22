@@ -28,6 +28,8 @@ class ClaimSurvival:
 
 
 _WEIGHTS = {"confirms": 2.0, "extends": 0.5, "challenges": -2.0, "neutral": 0.0}
+# Most a claim can gain from extending citations alone, on the 0-10 scale.
+_EXTEND_BONUS = 1.0
 _VERDICT_THRESHOLDS = [
     (8.0, "confirmed"),
     (6.0, "well-supported"),
@@ -58,11 +60,25 @@ def compute_survival(
             verdict="insufficient data",
         )
 
-    raw          = sum(_WEIGHTS[k] * v for k, v in label_counts.items() if k in _WEIGHTS)
-    max_possible = total * 2.0
-    # shift so 0 confirms/challenges gives score of 5
-    normalised   = (raw / max_possible + 0.5) * 10
-    score        = max(0.0, min(10.0, normalised))
+    # The core score is the balance of citations that take a position for or
+    # against the claim, with neutral citations pulling it toward the midpoint.
+    # Extending citations are excluded from this ratio: they carry less weight
+    # than a direct confirmation, so including them in the denominator at full
+    # cost made a positively weighted signal lower the score.
+    positional  = confirms + challenges + neutral
+    if positional == 0:
+        normalised = 5.0
+    else:
+        raw        = _WEIGHTS["confirms"] * confirms + _WEIGHTS["challenges"] * challenges
+        # shift so equal confirms/challenges gives a score of 5
+        normalised = (raw / (positional * 2.0) + 0.5) * 10
+
+    # Extending work corroborates a claim without directly testing it, so it
+    # contributes a bounded bonus that can never reduce the score.
+    if total:
+        normalised += _EXTEND_BONUS * (extends / total)
+
+    score = max(0.0, min(10.0, normalised))
 
     verdict = "challenged"
     for threshold, label in _VERDICT_THRESHOLDS:
