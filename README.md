@@ -33,6 +33,20 @@ Output is an HTML report with a stacked bar chart per claim and a verdict label 
 
 ---
 
+## Testing
+
+Install the dependencies and run the suite:
+
+```bash
+python -m venv .venv
+.venv/Scripts/pip install -r requirements.txt pytest   # Linux/macOS: .venv/bin/pip
+.venv/Scripts/python -m pytest -v
+```
+
+Exercise the CLI directly with `python -m claimaudit.cli --help`.
+
+---
+
 ## Project structure
 
 ```
