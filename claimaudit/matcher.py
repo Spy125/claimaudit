@@ -40,30 +40,37 @@ class MatchResult:
 def classify_citation(ctx: CitationContext) -> MatchResult:
     """
     Classify how a citing paper relates to the source claim.
-    Uses intents first (from Semantic Scholar), falls back to context text.
+
+    The citation context text is authoritative when present, because it states
+    whether the citing work agreed or disagreed. Semantic Scholar's structured
+    intents (result, methodology, background) describe *where* a paper is cited,
+    not the stance: a paper that refutes a claim in its results section still
+    carries a "result" intent. Intents are therefore only a fallback for when
+    no context text is available.
     """
-    intents = [i.lower() for i in ctx.intents]
-
-    # semantic scholar provides structured intents when available
-    if "result" in intents or "methodology" in intents:
-        # "result" intents usually mean the work built on / confirmed
-        if ctx.is_influential:
-            return MatchResult(ctx, "confirms", 0.8)
-        return MatchResult(ctx, "extends", 0.65)
-
     text = ctx.context_text
-    if not text:
+    if text:
+        challenge_m = _CHALLENGE_PATTERNS.search(text)
+        confirm_m   = _CONFIRM_PATTERNS.search(text)
+        extend_m    = _EXTEND_PATTERNS.search(text)
+
+        # A sentence may contain both a confirming stem and a negation of it
+        # ("could not replicate", "do not support"). The explicit challenge
+        # lexicon (contradict, refute, dispute, inconsistent) is the stronger
+        # signal, so challenges take precedence when both fire.
+        if challenge_m:
+            return MatchResult(ctx, "challenges", 0.75)
+        if confirm_m:
+            return MatchResult(ctx, "confirms", 0.75)
+        if extend_m:
+            return MatchResult(ctx, "extends", 0.65)
         return MatchResult(ctx, "neutral", 0.5)
 
-    challenge_m = _CHALLENGE_PATTERNS.search(text)
-    confirm_m   = _CONFIRM_PATTERNS.search(text)
-    extend_m    = _EXTEND_PATTERNS.search(text)
-
-    if challenge_m and not confirm_m:
-        return MatchResult(ctx, "challenges", 0.75)
-    if confirm_m and not challenge_m:
-        return MatchResult(ctx, "confirms", 0.75)
-    if extend_m:
+    # No context text: fall back to the structured intent.
+    intents = [i.lower() for i in ctx.intents]
+    if "result" in intents or "methodology" in intents:
+        if ctx.is_influential:
+            return MatchResult(ctx, "confirms", 0.8)
         return MatchResult(ctx, "extends", 0.65)
     return MatchResult(ctx, "neutral", 0.5)
 

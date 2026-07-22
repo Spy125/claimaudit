@@ -22,14 +22,28 @@ Built to explore NLP pipelines on academic text and to think about how scientifi
 ```bash
 pip install -r requirements.txt
 
-# Audit a paper by DOI
-python -m claimaudit.cli audit --doi 10.1038/s41586-021-03819-2
+# Try it offline with bundled sample data (no network or API key needed)
+python -m claimaudit.cli "graphene batteries" --demo
 
-# Limit citation depth and export JSON
-python -m claimaudit.cli audit --doi 10.1038/nature12373 --max-citations 100 --json report.json
+# Audit a topic against live data from Semantic Scholar
+python -m claimaudit.cli "graphene batteries"
+
+# Fetch more papers, filter by year, and export a report
+python -m claimaudit.cli "perovskite solar cells" --papers 20 --from-year 2015 --json report.json
 ```
 
-Output is an HTML report with a stacked bar chart per claim and a verdict label (Robust / Supported / Mixed / Contested / Disputed).
+Each claim is scored 0–10 from the balance of citing papers that confirm,
+challenge, or extend it, with a verdict label (confirmed / well-supported /
+mixed / contested / challenged).
+
+### Live data and rate limits
+
+Live queries use the Semantic Scholar API. Its free tier throttles
+unauthenticated traffic heavily, so requests without a key are often
+rate-limited. For live use, request a free API key from Semantic Scholar and
+provide it via the `SEMANTIC_SCHOLAR_API_KEY` environment variable (or
+`--api-key`). Without a key, use `--demo` to run against the bundled sample
+data.
 
 ---
 

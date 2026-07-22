@@ -20,8 +20,9 @@ class AuditResult:
 
 class ClaimClassifier:
     def __init__(self, api_key: str = "", min_confidence: float = 0.5,
-                 min_citations: int = 5, max_citations: int = 50):
-        self.client          = ScholarClient(api_key=api_key)
+                 min_citations: int = 5, max_citations: int = 50,
+                 demo: bool = False):
+        self.client          = ScholarClient(api_key=api_key, demo=demo)
         self.extractor       = ClaimExtractor()
         self.min_confidence  = min_confidence
         self.min_citations   = min_citations

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import typer
@@ -10,6 +11,13 @@ from rich.table import Table
 
 from claimaudit.classifier import ClaimClassifier
 from claimaudit.reporter import render_html, render_text, render_json
+from claimaudit.scholar import ScholarError
+
+# Windows consoles often default to cp1252, which mangles the arrows and other
+# non-ASCII characters in the output; force UTF-8 where the stream supports it.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 
 app     = typer.Typer(name="claimaudit", add_completion=False)
 console = Console()
@@ -24,13 +32,22 @@ def audit(
     min_citations: int= typer.Option(5,    "--min-cites"),
     html_out: Path    = typer.Option(None, "--html"),
     json_out: Path    = typer.Option(None, "--json"),
-    api_key: str      = typer.Option("",   "--api-key", envvar="S2_API_KEY"),
+    api_key: str      = typer.Option("",   "--api-key", envvar="SEMANTIC_SCHOLAR_API_KEY"),
+    demo: bool        = typer.Option(False, "--demo",
+                                     help="Use bundled sample data (no network or API key)"),
 ):
     """Audit scientific claims in papers about a topic."""
+    if demo:
+        console.print("[dim]Demo mode: using bundled sample data, not live results.[/dim]")
     console.print(f"[bold]Auditing:[/bold] {topic!r} — fetching up to {n_papers} papers…")
 
-    clf     = ClaimClassifier(api_key=api_key, min_citations=min_citations)
-    results = clf.audit_topic(topic, n_papers, from_year, to_year)
+    clf = ClaimClassifier(api_key=api_key, min_citations=min_citations, demo=demo)
+    try:
+        results = clf.audit_topic(topic, n_papers, from_year, to_year)
+    except ScholarError as e:
+        console.print(f"[red]Semantic Scholar is unavailable:[/red] {e}")
+        console.print("[yellow]Tip:[/yellow] rerun with [bold]--demo[/bold] to try the tool offline.")
+        raise typer.Exit(code=1)
 
     if not results:
         console.print("[yellow]No auditable claims found.[/yellow]")
