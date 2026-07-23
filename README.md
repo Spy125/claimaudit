@@ -1,19 +1,17 @@
 # ClaimAudit
 
-Tracks how well the empirical claims in a research paper hold up over time. Given a paper PDF or DOI, it extracts quantitative and causal claims from the abstract and body, finds citing papers via the Semantic Scholar API, and classifies each citation as confirming, challenging, or extending the original claim. The result is a per-claim survival report.
+Tracks how well the empirical claims in a research paper hold up over time. Given a research topic, it searches Semantic Scholar, extracts quantitative and causal claims from paper abstracts, finds the citing papers, and classifies each citation as confirming, challenging, or extending the original claim. The result is a per-claim survival report.
 
-Built to explore NLP pipelines on academic text and to think about how scientific consensus forms (or doesn't) after publication.
+Claim extraction and citation classification are rule-based, using signal-word and marker-phrase patterns rather than a trained model. Built to explore text pipelines on academic writing and to think about how scientific consensus forms (or doesn't) after publication.
 
 ---
 
 ## How it works
 
-1. Claims are extracted from the paper using regex signals for quantitative, comparative, and causal language
-2. Each claim is deduplicated using Jaccard similarity to remove near-duplicates
-3. Citing papers are retrieved from Semantic Scholar (free, no API key required)
-4. Citation contexts are matched to claims using TF-IDF cosine similarity
-5. Each context is classified as: confirms / challenges / extends / neutral
-6. A survival score is computed per claim: `(confirms*2 + extends*0.5 - challenges*2) / total`, normalised to 0-10
+1. Claims are extracted from paper abstracts using regex signal patterns for quantitative, comparative, and causal language
+2. Citing papers, and the context text of each citation, are retrieved from Semantic Scholar
+3. Each citation context is classified as confirms / challenges / extends / neutral using marker-phrase patterns
+4. A survival score (0–10) is computed per claim from the balance of confirming and challenging citations; extending citations add a small bounded bonus and neutral citations pull the score toward the midpoint
 
 ---
 
@@ -66,12 +64,13 @@ Exercise the CLI directly with `python -m claimaudit.cli --help`.
 ```
 claimaudit/
 ├── claimaudit/
-│   ├── extractor.py    # regex-based claim extraction with Jaccard dedup
-│   ├── scholar.py      # Semantic Scholar Graph API client
-│   ├── matcher.py      # TF-IDF cosine similarity claim-to-context matching
-│   ├── classifier.py   # confirms/challenges/extends/neutral classification
+│   ├── extractor.py    # regex-based claim extraction from abstracts
+│   ├── scholar.py      # Semantic Scholar Graph API client (+ demo data)
+│   ├── matcher.py      # citation-relation classification (confirms/challenges/extends)
+│   ├── classifier.py   # audit pipeline: search, extract, classify, score
 │   ├── scorer.py       # survival score computation and verdict thresholds
 │   ├── reporter.py     # HTML and JSON output
+│   ├── demo_data.py    # bundled sample data for --demo
 │   └── cli.py
 └── tests/
     ├── test_classifier.py
@@ -82,6 +81,9 @@ claimaudit/
 
 ## Stack
 
-Python 3.10, PyMuPDF, scikit-learn, Requests, Typer, Rich
+Python 3.10, Requests, Typer, Rich. No third-party ML or PDF libraries;
+claim extraction and citation classification are rule-based.
 
-No API key required. Semantic Scholar is publicly accessible.
+An API key is optional but recommended: Semantic Scholar's free tier throttles
+unauthenticated traffic, so live runs without a key are often rate-limited.
+Use `--demo` to run offline against the bundled sample data.
