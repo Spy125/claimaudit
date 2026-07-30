@@ -1,4 +1,4 @@
-"""ClaimAudit CLI — audit research claims via Semantic Scholar."""
+"""ClaimAudit CLI - audit research claims via Semantic Scholar."""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ def audit(
     """Audit scientific claims in papers about a topic."""
     if demo:
         console.print("[dim]Demo mode: using bundled sample data, not live results.[/dim]")
-    console.print(f"[bold]Auditing:[/bold] {topic!r} — fetching up to {n_papers} papers…")
+    console.print(f"[bold]Auditing:[/bold] {topic!r} - fetching up to {n_papers} papers...")
 
     clf = ClaimClassifier(api_key=api_key, min_citations=min_citations, demo=demo)
     try:
@@ -64,7 +64,7 @@ def audit(
             f"{s.score}/10",
             s.verdict,
             r.paper.title[:50],
-            s.claim_text[:60] + "…",
+            s.claim_text[:60] + "...",
         )
     console.print(table)
 

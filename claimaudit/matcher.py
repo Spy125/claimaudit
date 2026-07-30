@@ -43,7 +43,7 @@ def classify_citation(ctx: CitationContext) -> MatchResult:
 
     The citation context text is authoritative when present, because it states
     whether the citing work agreed or disagreed. Semantic Scholar's structured
-    intents (result, methodology, background) describe *where* a paper is cited,
+    intents (result, methodology, background) describe where a paper is cited,
     not the stance: a paper that refutes a claim in its results section still
     carries a "result" intent. Intents are therefore only a fallback for when
     no context text is available.

@@ -11,7 +11,7 @@ Claim extraction and citation classification are rule-based, using signal-word a
 1. Claims are extracted from paper abstracts using regex signal patterns for quantitative, comparative, and causal language
 2. Citing papers, and the context text of each citation, are retrieved from Semantic Scholar
 3. Each citation context is classified as confirms / challenges / extends / neutral using marker-phrase patterns
-4. A survival score (0–10) is computed per claim from the balance of confirming and challenging citations; extending citations add a small bounded bonus and neutral citations pull the score toward the midpoint
+4. A survival score (0-10) is computed per claim from the balance of confirming and challenging citations; extending citations add a small bounded bonus and neutral citations pull the score toward the midpoint
 
 ---
 
@@ -30,7 +30,7 @@ python -m claimaudit.cli "graphene batteries"
 python -m claimaudit.cli "perovskite solar cells" --papers 20 --from-year 2015 --json report.json
 ```
 
-Each claim is scored 0–10 from the balance of citing papers that confirm,
+Each claim is scored 0-10 from the balance of citing papers that confirm,
 challenge, or extend it, with a verdict label (confirmed / well-supported /
 mixed / contested / challenged).
 

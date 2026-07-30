@@ -76,7 +76,7 @@ def render_html(results: list[AuditResult], title: str = "ClaimAudit Report",
 
 def render_text(results: list[AuditResult]) -> str:
     """Plain-text summary of audit results."""
-    lines = [f"ClaimAudit — {len(results)} results\n" + "=" * 40]
+    lines = [f"ClaimAudit - {len(results)} results\n" + "=" * 40]
     for r in results:
         s = r.survival
         lines.append(
