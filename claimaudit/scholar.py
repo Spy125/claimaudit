@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 
 import requests
 
+from claimaudit import demo_data
+
 log = logging.getLogger(__name__)
 
 BASE_URL   = "https://api.semanticscholar.org/graph/v1"
@@ -72,9 +74,17 @@ class ScholarClient:
         Raises ScholarError if the API keeps returning 429 or cannot be reached,
         so the CLI can report it clearly instead of crashing with a traceback.
         """
+        if self.demo:
+            return _demo_response(path, params)
+
         url = f"{BASE_URL}/{path}"
         for attempt in range(MAX_RETRY):
             try:
+                # Throttle per request. This used to sit in the loops that parse
+                # a response, which slept once per returned paper even though the
+                # rate limit applies to requests, so asking for 20 papers cost
+                # 30 seconds of doing nothing.
+                time.sleep(RATE_SLEEP)
                 resp = self._session.get(url, params=params, timeout=10)
             except requests.RequestException as e:
                 log.error("Request failed (attempt %d/%d): %s", attempt + 1, MAX_RETRY, e)
@@ -105,9 +115,6 @@ class ScholarClient:
     def search_topic(self, query: str, limit: int = 20,
                      from_year: int = 2000, to_year: int = 2025) -> list[Paper]:
         """Search for papers on a topic with year filters."""
-        if self.demo:
-            from claimaudit.demo_data import demo_search
-            return demo_search(query, limit)
         data   = self._get("paper/search", {
             "query":  query,
             "limit":  limit,
@@ -126,14 +133,10 @@ class ScholarClient:
                 authors=authors,
                 citation_count=item.get("citationCount", 0),
             ))
-            time.sleep(RATE_SLEEP)
         return papers
 
     def fetch_citations(self, paper_id: str, limit: int = 50) -> list[CitationContext]:
         """Fetch citing papers and their citation context/intent."""
-        if self.demo:
-            from claimaudit.demo_data import demo_citations
-            return demo_citations(paper_id, limit)
         data  = self._get(f"paper/{paper_id}/citations", {
             "limit":  limit,
             "fields": "paperId,title,year,intents,isInfluential,contexts",
@@ -149,5 +152,19 @@ class ScholarClient:
                 is_influential=item.get("isInfluential", False),
                 context_text=" ".join(item.get("contexts", [])),
             ))
-        time.sleep(RATE_SLEEP)
         return ctxs
+
+
+def _demo_response(path: str, params: dict) -> dict:
+    """Serve bundled sample data in the shape the API would return.
+
+    Interposing here rather than in each public method means demo runs go
+    through exactly the same parsing code as live ones, so the sample path
+    cannot quietly drift away from the real one.
+    """
+    if path == "paper/search":
+        return demo_data.search_response(int(params.get("limit", 10)))
+    if path.startswith("paper/") and path.endswith("/citations"):
+        paper_id = path.split("/")[1]
+        return demo_data.citations_response(paper_id, int(params.get("limit", 50)))
+    return {"data": []}
